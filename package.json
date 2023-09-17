@@ -1,0 +1,17 @@
+{
+  "name": "memebot",
+  "module": "src/main.ts",
+  "type": "module",
+  "scripts": {
+    "tunnel": "cloudflared tunnel run dev"
+  },
+  "dependencies": {
+    "blurp": "link:blurp"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
