@@ -3,6 +3,7 @@
   "module": "src/main.ts",
   "type": "module",
   "scripts": {
+    "start": "bun run src/main.ts",
     "tunnel": "cloudflared tunnel run dev"
   },
   "dependencies": {

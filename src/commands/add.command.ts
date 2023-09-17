@@ -6,6 +6,7 @@ export const AddApplicationCommand = {
       name: "url",
       description: "youtube link",
       required: true,
+      type: 3,
     },
   ],
 };
