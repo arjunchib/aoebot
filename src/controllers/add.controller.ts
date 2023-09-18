@@ -6,5 +6,9 @@ export class AddController {
 
   chatInput(interaction: any) {
     this.youtube.download();
+    return {
+      type: 4,
+      data: { content: "It Worked!" },
+    };
   }
 }

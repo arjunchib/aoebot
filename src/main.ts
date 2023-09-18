@@ -1,10 +1,10 @@
 import { AddApplicationCommand } from "./commands/add.command";
 import { AddController } from "./controllers/add.controller";
-import { bootstrap } from "blurp";
+import { NameRouter, bootstrap } from "blurp";
 
 bootstrap({
   commands: [AddApplicationCommand],
-  controllers: [AddController],
+  router: new NameRouter([AddController]),
   applicationId: Bun.env.APPLICATION_ID!,
   botToken: Bun.env.BOT_TOKEN!,
   publicKey: Bun.env.PUBLIC_KEY!,
