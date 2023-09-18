@@ -7,5 +7,7 @@ bootstrap({
   controllers: [AddController],
   applicationId: Bun.env.APPLICATION_ID!,
   botToken: Bun.env.BOT_TOKEN!,
+  publicKey: Bun.env.PUBLIC_KEY!,
   guilds: [Bun.env.GUILD_ID!],
+  port: 8787,
 });
