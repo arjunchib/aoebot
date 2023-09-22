@@ -1,10 +1,10 @@
 import { inject } from "blurp";
-import { YoutubeService } from "../services/youtube.service";
+import { YoutubeService } from "../../services/youtube.service";
 
 export class AddController {
   youtube = inject(YoutubeService);
 
-  chatInput(interaction: any) {
+  async chatInput(interaction) {
     this.youtube.download();
     return {
       type: 4,
