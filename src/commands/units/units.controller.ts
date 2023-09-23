@@ -6,9 +6,6 @@ export class AddController {
 
   async chatInput(interaction: Interaction) {
     this.youtube.download();
-    interaction.respondWith({
-      type: 4,
-      data: { content: "It Worked!" },
-    });
+    interaction.respondWith(100);
   }
 }

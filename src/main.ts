@@ -1,5 +1,5 @@
-import { AddCommand } from "./commands/add/add.command";
-import { AddController } from "./commands/add/add.controller";
+import { AddCommand } from "./commands/units/units.command";
+import { AddController } from "./commands/units/units.controller";
 import { Router, bootstrap } from "blurp";
 
 bootstrap({
