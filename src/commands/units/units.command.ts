@@ -1,13 +1,14 @@
 import { b } from "blurp";
 
-export const AddCommand = b.slashCommand({
-  name: "add",
-  description: "add a meme from youtube",
+export const UnitsCommand = b.slashCommand({
+  name: "units",
+  description: "learn about every aoe4 unit",
   options: [
     b.string({
-      name: "url",
-      description: "youtube link",
+      name: "name",
+      description: "name of the unit",
       required: true,
+      autocomplete: true,
     }),
   ],
 });
