@@ -1,11 +1,19 @@
-import units from "../../data/all-unified.json";
+import units from "../../data/all.json";
+
+export type Unit = (typeof units)["data"][number];
 
 export class UnitsService {
-  get(name: string) {
-    return units.data.find((unit) => unit.name === name);
+  get(civilization: string, name: string) {
+    return this.getByCivilization(civilization).find(
+      (unit) => unit.name === name
+    );
   }
 
-  listNames() {
-    return units.data.map((unit) => unit.name);
+  listNames(civilization: string) {
+    return this.getByCivilization(civilization).map((unit) => unit.name);
+  }
+
+  private getByCivilization(civilization: string) {
+    return units.data.filter((unit) => unit.civs.includes(civilization));
   }
 }
