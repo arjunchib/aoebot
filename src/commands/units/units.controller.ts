@@ -30,23 +30,18 @@ export class UnitsController {
     });
   }
 
-  async autocomplete(interaction: AutocompleteInteraction) {
-    const civOption = interaction.data.options?.find(
-      (opt) => opt.name === "civilization"
-    );
-    const nameOption = interaction.data.options?.find(
-      (opt) => opt.name === "name"
-    );
+  async autocomplete(
+    interaction: AutocompleteInteraction<typeof UnitsCommand>
+  ) {
+    const { civilization, name } = interaction.options;
     const choices = this.unitService
-      .listNames(civOption?.value)
-      .filter((name) =>
-        this.normalizeQuery(name).startsWith(
-          this.normalizeQuery(nameOption?.value)
-        )
+      .listNames(civilization.value)
+      .filter((n) =>
+        this.normalizeQuery(n).startsWith(this.normalizeQuery(name.value))
       )
-      .map((name) => ({
-        name,
-        value: name,
+      .map((n) => ({
+        name: n,
+        value: n,
       }));
     interaction.respondWith(choices.slice(0, 25));
   }
