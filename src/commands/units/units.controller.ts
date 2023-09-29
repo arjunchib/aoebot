@@ -1,5 +1,6 @@
-import { AutocompleteInteraction, SlashInteraction, inject, b } from "blurp";
+import { AutocompleteInteraction, SlashInteraction, inject } from "blurp";
 import { Unit, UnitsService } from "../../services/units.service";
+import { UnitsCommand } from "./units.command";
 
 const COSTS_EMOJIS: Record<string, string> = {
   food: "🥩",
@@ -13,14 +14,9 @@ const COSTS_EMOJIS: Record<string, string> = {
 export class UnitsController {
   private unitService = inject(UnitsService);
 
-  async slash(interaction: SlashInteraction) {
-    const civOption = interaction.data.options?.find(
-      (opt) => opt.name === "civilization"
-    );
-    const nameOption = interaction.data.options?.find(
-      (opt) => opt.name === "name"
-    );
-    const unit = this.unitService.get(civOption?.value, nameOption?.value);
+  async slash(interaction: SlashInteraction<typeof UnitsCommand>) {
+    const { civilization, name } = interaction.options;
+    const unit = this.unitService.get(civilization.value, name.value);
     if (!unit) return interaction.respondWith("Could not find that unit!");
     const description = [this.costs(unit), unit.description].join("\n");
     interaction.respondWith({
