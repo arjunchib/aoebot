@@ -1,5 +1,5 @@
 import { AutocompleteInteraction, SlashInteraction, inject } from "blurp";
-import { Unit, UnitsService } from "../../services/units.service";
+import { Unit, UnitService } from "../../services/unit.service";
 import { UnitsCommand } from "./units.command";
 
 const COSTS_EMOJIS: Record<string, string> = {
@@ -12,22 +12,13 @@ const COSTS_EMOJIS: Record<string, string> = {
 };
 
 export class UnitsController {
-  private unitService = inject(UnitsService);
+  private unitService = inject(UnitService);
+  private unit?: Unit;
 
   async slash(interaction: SlashInteraction<typeof UnitsCommand>) {
     const { civilization, name } = interaction.options;
-    const unit = this.unitService.get(civilization.value, name.value);
-    if (!unit) return interaction.respondWith("Could not find that unit!");
-    const description = [this.costs(unit), unit.description].join("\n");
-    interaction.respondWith({
-      embeds: [
-        {
-          title: unit.name,
-          description,
-          thumbnail: { url: unit.icon },
-        },
-      ],
-    });
+    this.unit = this.unitService.get(civilization.value, name.value);
+    interaction.respondWith(this.embed);
   }
 
   async autocomplete(
@@ -35,24 +26,18 @@ export class UnitsController {
   ) {
     const { civilization, name } = interaction.options;
     const choices = this.unitService
-      .listNames(civilization.value)
-      .filter((n) =>
-        this.normalizeQuery(n).startsWith(this.normalizeQuery(name.value))
-      )
-      .map((n) => ({
-        name: n,
-        value: n,
+      .list(civilization.value, name.value)
+      .map((unit) => ({
+        name: unit.name,
+        value: unit.name,
       }));
     interaction.respondWith(choices.slice(0, 25));
   }
 
-  private normalizeQuery(query: string) {
-    return query.toLowerCase().replaceAll(" ", "");
-  }
-
-  private costs(unit: Unit): string {
+  private get costs(): string {
+    if (!this.unit) throw new Error("Cannot find unit");
     let costsArr = [];
-    const costs: Partial<Unit["costs"]> = structuredClone(unit.costs);
+    const costs: Partial<Unit["costs"]> = structuredClone(this.unit.costs);
     delete costs.total;
     if (costs.popcap === 1) delete costs.popcap;
     for (const [k, v] of Object.entries(costs)) {
@@ -61,5 +46,17 @@ export class UnitsController {
       }
     }
     return costsArr.join(" ");
+  }
+
+  private get embed() {
+    if (!this.unit) throw new Error("Cannot find unit");
+    const embeds = [
+      {
+        title: this.unit.name,
+        description: [this.costs, this.unit.description].join("\n"),
+        thumbnail: { url: this.unit.icon },
+      },
+    ];
+    return { embeds };
   }
 }
