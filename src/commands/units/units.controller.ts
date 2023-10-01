@@ -11,12 +11,27 @@ const COSTS_EMOJIS: Record<string, string> = {
   time: "🕑",
 };
 
+const CIV_SLUGS: Record<string, string> = {
+  en: "english",
+  hr: "hre",
+  fr: "french",
+  ch: "chinese",
+  de: "delhi",
+  ab: "abbasid",
+  ma: "malians",
+  mo: "mongols",
+  ot: "ottomans",
+  ru: "rus",
+};
+
 export class UnitsController {
   private unitService = inject(UnitService);
   private unit?: Unit;
+  private civilization?: string;
 
   async slash(interaction: SlashInteraction<typeof UnitsCommand>) {
     const { civilization, name } = interaction.options;
+    this.civilization = civilization.value;
     this.unit = this.unitService.get(civilization.value, name.value);
     interaction.respondWith(this.embed);
   }
@@ -25,6 +40,7 @@ export class UnitsController {
     interaction: AutocompleteInteraction<typeof UnitsCommand>
   ) {
     const { civilization, name } = interaction.options;
+    if (!civilization || !name) return interaction.respondWith([]);
     const choices = this.unitService
       .list(civilization.value, name.value)
       .map((unit) => ({
@@ -53,10 +69,18 @@ export class UnitsController {
     const embeds = [
       {
         title: this.unit.name,
+        url: this.url,
         description: [this.costs, this.unit.description].join("\n"),
         thumbnail: { url: this.unit.icon },
       },
     ];
     return { embeds };
+  }
+
+  private get url() {
+    if (!this.civilization) return "";
+    const civ = CIV_SLUGS[this.civilization];
+    const unit = this.unit?.baseId;
+    return `https://aoe4world.com/explorer/civs/${civ}/units/${unit}`;
   }
 }
