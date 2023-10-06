@@ -1,5 +1,10 @@
-import { AutocompleteInteraction, SlashInteraction, inject } from "blurp";
-import { Unit, UnitService } from "../../services/unit.service";
+import {
+  AutocompleteInteraction,
+  MessageComponentInteraction,
+  SlashInteraction,
+  b,
+} from "blurp";
+import { Unit } from "../../services/unit/unit.model";
 import { UnitsCommand } from "./units.command";
 
 const COSTS_EMOJIS: Record<string, string> = {
@@ -25,29 +30,49 @@ const CIV_SLUGS: Record<string, string> = {
 };
 
 export class UnitsController {
-  private unitService = inject(UnitService);
   private unit?: Unit;
   private civilization?: string;
 
-  async slash(interaction: SlashInteraction<typeof UnitsCommand>) {
+  slash(interaction: SlashInteraction<typeof UnitsCommand>) {
     const { civilization, name } = interaction.options;
     this.civilization = civilization.value;
-    this.unit = this.unitService.get(civilization.value, name.value);
-    interaction.respondWith(this.embed);
+    this.unit = Unit.get(civilization.value, name.value);
+    interaction.respondWith(this.message);
   }
 
-  async autocomplete(
-    interaction: AutocompleteInteraction<typeof UnitsCommand>
-  ) {
+  autocomplete(interaction: AutocompleteInteraction<typeof UnitsCommand>) {
     const { civilization, name } = interaction.options;
     if (!civilization || !name) return interaction.respondWith([]);
-    const choices = this.unitService
-      .list(civilization.value, name.value)
-      .map((unit) => ({
-        name: unit.name,
-        value: unit.name,
-      }));
+    const choices = Unit.list(civilization.value, name.value).map((unit) => ({
+      name: unit.name,
+      value: unit.id,
+    }));
     interaction.respondWith(choices.slice(0, 25));
+  }
+
+  messageComponent(interaction: MessageComponentInteraction) {
+    const [civ, id] = interaction.data.customId.split(",");
+    this.unit = Unit.get(civ, id);
+    interaction.respondWith({ ...this.message, update: true });
+  }
+
+  private get message() {
+    return {
+      embeds: [this.embed],
+      components: this.buttonRow?.length ? [this.buttonRow] : undefined,
+    };
+  }
+
+  private get buttonRow() {
+    return this.unit
+      ?.similar()
+      .map((unit) =>
+        b.button({
+          customId: [unit.civs[0], unit.id].join(","),
+          label: unit.name,
+        })
+      )
+      .slice(0, 5);
   }
 
   private get costs(): string {
@@ -66,19 +91,16 @@ export class UnitsController {
 
   private get embed() {
     if (!this.unit) throw new Error("Cannot find unit");
-    const embeds = [
-      {
-        title: this.unit.name,
-        url: this.url,
-        description: [this.costs, this.unit.description].join("\n"),
-        thumbnail: { url: this.unit.icon },
-      },
-    ];
-    return { embeds };
+    return {
+      title: this.unit.name,
+      url: this.url,
+      description: [this.costs, this.unit.description].join("\n"),
+      thumbnail: { url: this.unit.icon },
+    };
   }
 
   private get url() {
-    if (!this.civilization) return "";
+    if (!this.civilization) return undefined;
     const civ = CIV_SLUGS[this.civilization];
     const unit = this.unit?.baseId;
     return `https://aoe4world.com/explorer/civs/${civ}/units/${unit}`;
