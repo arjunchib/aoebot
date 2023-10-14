@@ -1,5 +1,7 @@
 import {
   AutocompleteInteraction,
+  ComponentType,
+  Embed,
   MessageComponentInteraction,
   SlashInteraction,
   b,
@@ -29,6 +31,8 @@ const CIV_SLUGS: Record<string, string> = {
   ru: "rus",
 };
 
+const STAT_SEPARATOR = " "; // a wide space
+
 export class UnitsController {
   private unit?: Unit;
   private civilization?: string;
@@ -51,28 +55,39 @@ export class UnitsController {
   }
 
   messageComponent(interaction: MessageComponentInteraction) {
-    const [civ, id] = interaction.data.customId.split(",");
-    this.unit = Unit.get(civ, id);
-    interaction.respondWith({ ...this.message, update: true });
+    if (interaction.data.componentType === ComponentType.Button) {
+      const [civ, id] = interaction.data.customId.split(",");
+      this.unit = Unit.get(civ, id);
+      this.civilization = civ;
+      interaction.respondWith({ ...this.message, update: true });
+    } else if (interaction.data.componentType === ComponentType.StringSelect) {
+      const id = interaction.data.values?.[0] || "";
+      this.civilization = interaction.data.customId;
+      this.unit = Unit.get(this.civilization, id);
+      interaction.respondWith({ ...this.message, update: true });
+    }
   }
 
   private get message() {
     return {
       embeds: [this.embed],
-      components: this.buttonRow?.length ? [this.buttonRow] : undefined,
+      components: this.components,
     };
   }
 
-  private get buttonRow() {
-    return this.unit
-      ?.similar()
-      .map((unit) =>
-        b.button({
-          customId: [unit.civs[0], unit.id].join(","),
+  private get components() {
+    if (!this.civilization) throw new Error("Cannot find civilization");
+    const select = b.stringSelect({
+      customId: this.civilization,
+      maxValues: 1,
+      options: Unit.getByCivilization(this.civilization)
+        .map((unit) => ({
           label: unit.name,
-        })
-      )
-      .slice(0, 5);
+          value: unit.id,
+        }))
+        .slice(0, 25),
+    });
+    return [[select]];
   }
 
   private get costs(): string {
@@ -86,16 +101,17 @@ export class UnitsController {
         costsArr.push(`${COSTS_EMOJIS[k]} **${v}**`);
       }
     }
-    return costsArr.join(" ");
+    return costsArr.join(STAT_SEPARATOR);
   }
 
-  private get embed() {
+  private get embed(): Embed {
     if (!this.unit) throw new Error("Cannot find unit");
     return {
       title: this.unit.name,
       url: this.url,
-      description: [this.costs, this.unit.description].join("\n"),
+      description: this.description,
       thumbnail: { url: this.unit.icon },
+      fields: this.fields,
     };
   }
 
@@ -104,5 +120,35 @@ export class UnitsController {
     const civ = CIV_SLUGS[this.civilization];
     const unit = this.unit?.baseId;
     return `https://aoe4world.com/explorer/civs/${civ}/units/${unit}`;
+  }
+
+  private get description() {
+    if (!this.unit) throw new Error("Cannot find unit");
+    return [this.costs, this.stats].join(STAT_SEPARATOR);
+  }
+
+  private get stats() {
+    if (!this.unit) throw new Error("Cannot find unit");
+    const statsArr = [];
+    const stats = {
+      "♥️": this.unit.hitpoints,
+      "🏃‍♂️": this.unit.movement.speed,
+      "👁️": this.unit.sight.line,
+      "🪖": this.unit.armor.find((armor) => armor.type === "melee")?.value,
+      "🛡️": this.unit.armor.find((armor) => armor.type === "ranged")?.value,
+    };
+    for (const [k, v] of Object.entries(stats)) {
+      if (v) statsArr.push(`${k} **${v}**`);
+    }
+    return statsArr.join(STAT_SEPARATOR);
+  }
+
+  private get fields(): Embed["fields"] {
+    if (!this.unit) throw new Error("Cannot find unit");
+    return this.unit.weapons.map((weapon) => ({
+      inline: true,
+      name: `${weapon.name} (${weapon.type})`,
+      value: `${(weapon.damage / weapon.speed).toFixed(2)}`,
+    }));
   }
 }
