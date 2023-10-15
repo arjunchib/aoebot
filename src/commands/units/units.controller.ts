@@ -31,6 +31,19 @@ const CIV_SLUGS: Record<string, string> = {
   ru: "rus",
 };
 
+const CIV_COLORS: Record<string, number> = {
+  en: 0xfff1f1,
+  hr: 0xebdd71,
+  fr: 0x2f7ec3,
+  ch: 0xc34825,
+  de: 0x379d54,
+  ab: 0x51565c,
+  ma: 0xcd3c63,
+  mo: 0x3680b9,
+  ot: 0x407846,
+  ru: 0xcd5747,
+};
+
 const STAT_SEPARATOR = " "; // a wide space
 
 export class UnitsController {
@@ -105,6 +118,7 @@ export class UnitsController {
   }
 
   private get embed(): Embed {
+    if (!this.civilization) throw new Error("Cannot find civilization");
     if (!this.unit) throw new Error("Cannot find unit");
     return {
       title: this.unit.name,
@@ -112,6 +126,10 @@ export class UnitsController {
       description: this.description,
       thumbnail: { url: this.unit.icon },
       fields: this.fields,
+      color: CIV_COLORS[this.civilization],
+      footer: {
+        text: CIV_SLUGS[this.civilization],
+      },
     };
   }
 
